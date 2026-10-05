@@ -1,0 +1,9 @@
+# Fuer die lokale Windows-Version nicht erforderlich.
+# Diese Datei bleibt nur als Grundlage fuer eine spaetere NAS-Version erhalten.
+services:
+  finora-doc-assistant:
+    build: .
+    container_name: finora-doc-assistant
+    restart: unless-stopped
+    ports:
+      - "8020:8000"
