@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Finora Kontoabgleich</title>
+<style>
+body{font-family:system-ui;margin:28px;background:#f6f7f9;color:#17202a}.top{display:flex;justify-content:space-between;align-items:center;gap:16px}.top a{color:#1f5fbf;text-decoration:none;font-weight:650}.card{background:#fff;border:1px solid #d9dde3;border-radius:14px;padding:20px;margin:18px 0}.upload{display:flex;gap:12px;align-items:center;flex-wrap:wrap}button{padding:9px 14px;border:0;border-radius:8px;background:#1f5fbf;color:#fff;font-weight:650;cursor:pointer}.danger{background:#9f1239}.secondary{background:#475569}.ok{background:#eef9ee;border:1px solid #cfe8cf;padding:12px;border-radius:9px}.error{background:#fff1f2;border:1px solid #fecdd3;padding:12px;border-radius:9px;color:#9f1239}.muted{color:#64748b;font-size:.9rem}.tx{background:#fff;border:1px solid #d9dde3;border-radius:12px;padding:16px;margin:12px 0}.txhead{display:grid;grid-template-columns:120px 1fr 145px 135px;gap:12px;align-items:center}.amount{font-weight:800;text-align:right}.positive{color:#14733d}.negative{color:#a12a2a}.purpose{background:#f8fafc;padding:9px;border-radius:7px;margin-top:9px;white-space:pre-wrap}.suggest{margin-top:12px;padding:12px;border-radius:9px;background:#eef6ff;border:1px solid #c9ddf5}.weak{background:#fff8e5;border-color:#f5df9e}.score{font-weight:800}.badge{display:inline-block;padding:2px 7px;border-radius:999px;background:#e8edf3;font-size:.8rem;margin-left:6px}.matched{opacity:.78}.inline{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.inline label{font-size:.85rem}.inline input{padding:7px;width:150px}.none{color:#6b7280;font-style:italic}.alloc{margin-top:10px;padding:10px;background:#f1f5f9;border-radius:8px}.allocrow{display:flex;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid #dbe3ea;padding:8px 0}.allocrow:first-child{border-top:0}.manual{margin-top:12px;border-top:1px solid #d9dde3;padding-top:12px}.searchresult{border:1px solid #d9dde3;border-radius:8px;padding:10px;margin-top:8px;background:#fff}.pill{display:inline-block;padding:2px 7px;border-radius:999px;background:#e2e8f0;font-size:.78rem}.remaining{font-weight:750;color:#7c3aed}
+@media(max-width:850px){.txhead{grid-template-columns:1fr 1fr}.amount{text-align:left}}
+</style>
+</head>
+<body>
+<div class="top"><div><h1>Kontoabgleich <span class="badge">v0.6.3-dev</span></h1><div class="muted">CSV / CAMT / MT940 → gemeinsame Matching-Engine</div></div><a href="/">← Dokumente</a></div>
+
+{% if request.query_params.get('imported') %}<div class="ok">Import abgeschlossen{% if request.query_params.get('format') %} ({{ request.query_params.get('format') }}){% endif %}: <b>{{ request.query_params.get('imported') }}</b> neue Buchungen, {{ request.query_params.get('duplicates','0') }} Dubletten übersprungen.</div>{% endif %}
+{% if request.query_params.get('matched') %}<div class="ok">Zuordnung gespeichert. Rechnungsstatus: <b>{{ request.query_params.get('status','') }}</b> · Bankbuchung: <b>{{ request.query_params.get('tx_status','') }}</b>.</div>{% endif %}
+{% if request.query_params.get('unmatched') %}<div class="ok">Zuordnung wurde gelöst und offene Beträge wurden neu berechnet.</div>{% endif %}
+{% if request.query_params.get('error') %}<div class="error">{% if request.query_params.get('error') == 'format' %}Bitte CSV, CAMT/XML oder MT940 auswählen.{% elif request.query_params.get('error') == 'match' %}Die Zuordnung konnte nicht gespeichert werden. Prüfe offenen Betrag und Auswahl.{% elif request.query_params.get('error') == 'unmatch' %}Die Zuordnung konnte nicht gelöst werden.{% else %}Bankdatei konnte nicht importiert werden: {{ request.query_params.get('message','Unbekannter Fehler') }}{% endif %}</div>{% endif %}
+
+<div class="card">
+<h2>Bankumsätze importieren</h2>
+<form class="upload" action="/bank/import" method="post" enctype="multipart/form-data">
+<input type="file" name="file" accept=".csv,.xml,.camt,.sta,.mt940,.txt,text/csv,application/xml,text/xml,text/plain" required>
+<button type="submit">Bankdatei importieren</button>
+</form>
+<p class="muted">Unterstützt Berliner-Volksbank-CSV sowie einen ersten CAMT.052/053/054- und MT940-Importpfad. Alle Formate werden in dieselbe Finora-Transaktionsstruktur normalisiert; bereits importierte Buchungen werden per Prüfsumme übersprungen.</p>
+</div>
+
+<h2>Bankbuchungen</h2>
+{% if not transactions %}<div class="card none">Noch keine Bankumsätze importiert.</div>{% endif %}
+{% for tx in transactions %}
+<div class="tx {% if tx.reconciliation_status == 'Zugeordnet' %}matched{% endif %}">
+  <div class="txhead">
+    <div><b>{{ tx.booking_date }}</b><br><span class="muted">Valuta {{ tx.value_date }}</span></div>
+    <div><b>{{ tx.participant_name or 'Ohne Namen' }}</b><br><span class="muted">{{ tx.booking_text }}</span></div>
+    <div class="amount {% if tx.amount >= 0 %}positive{% else %}negative{% endif %}">{{ '%.2f'|format(tx.amount)|replace('.', ',') }} {{ tx.currency }}<br>{% if tx.remaining_amount > 0.005 %}<span class="remaining">offen: {{ '%.2f'|format(tx.remaining_amount)|replace('.', ',') }}</span>{% endif %}</div>
+    <div><b>{{ tx.reconciliation_status }}</b></div>
+  </div>
+  <div class="purpose">{{ tx.purpose }}</div>
+
+  {% if tx.matches %}
+  <div class="alloc">
+    <b>Bisherige Zuordnungen</b>
+    {% for m in tx.matches %}
+    <div class="allocrow">
+      <div><b>{{ m.document_type }}</b> {{ m.invoice_number or '' }} · {{ m.correspondent }}<br><span class="muted">{{ '%.2f'|format(m.matched_amount)|replace('.', ',') }} € zugeordnet</span></div>
+      <form action="/bank/unmatch" method="post" onsubmit="return confirm('Diese Zuordnung wirklich lösen?');">
+        <input type="hidden" name="match_id" value="{{ m.match_id }}">
+        <button class="danger" type="submit">Zuordnung lösen</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if tx.remaining_amount > 0.005 %}
+    {% if tx.suggestion %}
+    <div class="suggest {% if tx.suggestion_score < 0.70 %}weak{% endif %}">
+      <div><span class="score">Bester Treffer {{ '%.0f'|format(tx.suggestion_score*100) }}%</span> → <b>{{ tx.suggestion.document_type }}</b> {{ tx.suggestion.invoice_number or '' }}</div>
+      <div>{{ tx.suggestion.correspondent }} · Rechnung {{ tx.suggestion.gross_amount }} € · offen {{ '%.2f'|format(tx.suggestion.open_amount or 0)|replace('.', ',') }} €</div>
+      <div class="muted">{{ tx.suggestion_reasons|join(' · ') }}</div>
+      <form class="inline" action="/bank/confirm" method="post">
+        <input type="hidden" name="transaction_id" value="{{ tx.id }}">
+        <input type="hidden" name="document_id" value="{{ tx.suggestion.document_id }}">
+        <input type="hidden" name="confidence" value="{{ tx.suggestion_score }}">
+        <label>Zuzuordnender Betrag<br><input type="number" step="0.01" min="0.01" max="{{ '%.2f'|format(tx.remaining_amount) }}" name="match_amount" value="{{ '%.2f'|format([tx.remaining_amount, tx.suggestion.open_amount or tx.remaining_amount]|min) }}"></label>
+        <button type="submit">Zuordnung bestätigen</button>
+      </form>
+      {% if tx.suggestions|length > 1 %}<div class="muted" style="margin-top:8px">Weitere mögliche Treffer werden über die manuelle Suche zugänglich. Bei Sammelzahlungen bleibt nach der ersten Zuordnung der Restbetrag offen.</div>{% endif %}
+    </div>
+    {% else %}<div class="suggest weak"><b>Kein sicherer Rechnungstreffer.</b> Nutze die manuelle Suche.</div>{% endif %}
+
+    <div class="manual">
+      <form class="inline" method="get" action="/bank">
+        <input type="hidden" name="search_tx" value="{{ tx.id }}">
+        <label>Rechnung manuell suchen<br><input type="text" name="q" value="{{ tx.manual_query }}" placeholder="Rechnungsnr., Kunde, Titel"></label>
+        <button class="secondary" type="submit">Suchen</button>
+      </form>
+      {% if tx.manual_query %}
+        {% if tx.manual_results %}
+          {% for r in tx.manual_results %}
+          <div class="searchresult">
+            <div><b>{{ r.document_type }}</b> {{ r.invoice_number or '' }} · {{ r.correspondent }} <span class="pill">offen {{ '%.2f'|format(r.open_amount or 0)|replace('.', ',') }} €</span></div>
+            <div class="muted">{{ r.reasons|join(' · ') }}</div>
+            <form class="inline" action="/bank/confirm" method="post">
+              <input type="hidden" name="transaction_id" value="{{ tx.id }}">
+              <input type="hidden" name="document_id" value="{{ r.document_id }}">
+              <input type="hidden" name="confidence" value="{{ r.match_score }}">
+              <label>Betrag<br><input type="number" step="0.01" min="0.01" max="{{ '%.2f'|format(tx.remaining_amount) }}" name="match_amount" value="{{ '%.2f'|format([tx.remaining_amount, r.open_amount or tx.remaining_amount]|min) }}"></label>
+              <button type="submit">Dieser Rechnung zuordnen</button>
+            </form>
+          </div>
+          {% endfor %}
+        {% else %}<div class="none">Keine offene Rechnung passend zu „{{ tx.manual_query }}“ gefunden.</div>{% endif %}
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endfor %}
+</body>
+</html>

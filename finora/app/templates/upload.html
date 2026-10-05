@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Finora Dokument-Assistent</title>
+<style>
+body{font-family:system-ui;max-width:900px;margin:40px auto;padding:0 20px;color:#20242a}.card{padding:24px;border:1px solid #d9dde3;border-radius:14px;background:#fff}button{padding:10px 16px;border:0;border-radius:8px;background:#1f5fbf;color:#fff;font-weight:600}.ok{background:#eef9ee;padding:14px;border-radius:8px;margin-bottom:16px}.info{background:#f4f7fb;padding:12px;border-radius:8px;margin:16px 0;color:#475569}.error{background:#fff1f2;padding:12px;border-radius:8px;color:#9f1239}.drop{display:block;border:2px dashed #cbd5e1;border-radius:12px;padding:22px;margin:14px 0;background:#f8fafc}input[type=file]{width:100%;font-size:1rem}.hint{font-size:.9rem;color:#64748b;margin-top:8px}
+</style>
+</head>
+<body>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px"><h1>Finora Dokument-Assistent</h1><a href="/bank" style="color:#1f5fbf;font-weight:650;text-decoration:none">Kontoabgleich →</a></div>
+<p>Einzelne oder mehrere PDF/JPG/PNG-Dateien hochladen, OCR prüfen und danach lokal ablegen.</p>
+<div class="info"><b>Lokaler Speicher:</b> {{ storage_root }}</div>
+{% if request.query_params.get('saved') %}<div class="ok">Dokument wurde lokal gespeichert.<br><small>{{ request.query_params.get('path','') }}</small></div>{% endif %}
+{% if request.query_params.get('batch_saved') %}<div class="ok"><b>Stapel abgeschlossen.</b> {{ request.query_params.get('batch_saved') }} Dokumente wurden verarbeitet und gespeichert.</div>{% endif %}
+{% if request.query_params.get('error') == 'missing' %}<div class="error">Die temporäre Datei wurde nicht gefunden.</div>{% endif %}
+{% if request.query_params.get('error') == 'batch' %}<div class="error">Der Dokumentstapel wurde nicht gefunden oder ist nicht mehr gültig.</div>{% endif %}
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+<div class="card">
+<form action="/upload" method="post" enctype="multipart/form-data">
+<label class="drop">
+<b>Dokumente auswählen</b><br><br>
+<input id="files" type="file" name="files" accept=".pdf,.jpg,.jpeg,.png" multiple required>
+<div class="hint">Du kannst mehrere Dateien gleichzeitig markieren. Danach prüfst und bestätigst du sie nacheinander.</div>
+</label>
+<div id="selection" class="hint"></div>
+<br>
+<button type="submit">OCR für Auswahl starten</button>
+</form>
+</div>
+<script>
+const files=document.getElementById('files');const selection=document.getElementById('selection');
+files.addEventListener('change',()=>{const n=files.files.length;selection.textContent=n?`${n} Dokument${n===1?'':'e'} ausgewählt`:''});
+</script>
+</body>
+</html>

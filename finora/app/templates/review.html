@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Dokument pruefen</title>
+<style>
+body{font-family:system-ui;margin:24px;background:#f6f7f9;color:#111}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.panel{background:#fff;border:1px solid #ddd;border-radius:12px;padding:18px}label{display:block;margin:10px 0}input,select{width:100%;padding:8px;box-sizing:border-box}textarea{width:100%;min-height:500px;box-sizing:border-box}.conf{font-size:.9em;color:#666}.pathbox{padding:10px;background:#f3f5f7;border-radius:8px;margin-top:6px;word-break:break-all}.hint{font-size:.86em;color:#666;margin-top:4px}button{padding:9px 14px;cursor:pointer}.hidden{display:none}.learned{background:#eef7ff;border:1px solid #b9daf7;padding:12px;border-radius:9px;margin:10px 0}.low{color:#a33}.medium{color:#8a6700}.high{color:#16713c}
+</style>
+</head>
+<body>
+<h1>Dokument pruefen</h1>
+{% if batch_total > 1 %}<div class="learned"><b>Stapelverarbeitung:</b> Dokument {{ batch_index + 1 }} von {{ batch_total }}. Nach dem Speichern öffnet Finora automatisch das nächste Dokument.</div>{% endif %}
+<p>Nach Bestaetigung wird lokal unter <b>{{ archive_root }}</b> gespeichert. Eine Originalkopie bleibt erhalten.</p>
+{% if r.learned_from_history %}<div class="learned"><b>Finora hat aus frueheren Bestaetigungen gelernt.</b><br>{{ r.learning_note }}</div>{% endif %}
+<div class="grid">
+<div class="panel"><h2>OCR-Text</h2><textarea readonly>{{ ocr_text }}</textarea></div>
+<div class="panel">
+<form action="/confirm" method="post">
+<input type="hidden" name="temp_name" value="{{ temp_name }}">
+<input type="hidden" name="original_name" value="{{ original_name }}">
+<input type="hidden" name="predicted_document_type" value="{{ r.document_type }}">
+<input type="hidden" name="predicted_correspondent" value="{{ r.correspondent }}">
+<input type="hidden" name="predicted_addressee_type" value="{{ r.addressee_type }}">
+<input type="hidden" name="predicted_private_person" value="{{ r.private_person }}">
+<input type="hidden" name="confidence_document_type" value="{{ r.confidence_document_type }}">
+<input type="hidden" name="confidence_correspondent" value="{{ r.confidence_correspondent }}">
+<input type="hidden" name="confidence_addressee" value="{{ r.confidence_addressee }}">
+<input type="hidden" name="batch_id" value="{{ batch_id }}">
+<input type="hidden" name="batch_index" value="{{ batch_index }}">
+<input type="hidden" name="batch_total" value="{{ batch_total }}">
+
+<label>Dokumenttyp
+<select id="document_type" name="document_type">
+{% for v in ['Eingangsrechnung','Ausgangsrechnung','Eingehende Gutschrift','Ausgehende Gutschrift','Kassenbeleg','Bankbeleg','Kontoauszug','Steuerbescheid','Mahnung','Zahlungsavis','Zahlungsnachweis','Lieferschein','Vertrag','Sonstiges'] %}
+<option value="{{v}}" {% if v==r.document_type %}selected{% endif %}>{{v}}</option>
+{% endfor %}
+</select></label>
+<div class="conf">Sicherheit: {{ '%.0f'|format(r.confidence_document_type*100) }}%</div>
+
+<label>Korrespondent / Absender<input id="correspondent" name="correspondent" value="{{ r.correspondent }}"></label>
+<div class="conf">Sicherheit: {{ '%.0f'|format(r.confidence_correspondent*100) }}%</div>
+
+<label>Bereich / Adressat
+<select id="addressee_type" name="addressee_type">
+{% for v,label in [('PSS','PSS'),('BP','Berliner Paletten'),('PSSpandau','Paletten-Service-Spandau'),('Privat','Privat'),('Unklar','Unklar')] %}
+<option value="{{v}}" {% if v==r.addressee_type %}selected{% endif %}>{{label}}</option>
+{% endfor %}
+</select></label>
+<div class="conf">Sicherheit: {{ '%.0f'|format(r.confidence_addressee*100) }}%</div>
+
+<label>Adressat-Name<input id="addressee_name" name="addressee_name" value="{{ r.addressee_name }}"></label>
+<div id="private_person_wrap" class="hidden"><label>Privatperson
+<select id="private_person" name="private_person">
+{% for v in ['Yasmin','Frank','Marina','Karl','Unklar'] %}<option value="{{v}}" {% if v==r.private_person %}selected{% endif %}>{{v}}</option>{% endfor %}
+</select></label></div>
+
+<label>Datum<input id="document_date" name="document_date" value="{{ r.document_date }}"></label>
+<label>Rechnungsnummer<input name="invoice_number" value="{{ r.invoice_number }}"></label>
+<label>Bruttobetrag<input name="gross_amount" value="{{ r.gross_amount }}"></label>
+<label>Titel<input name="title" value="{{ r.title }}"></label>
+<label>Zielordner<input id="target_folder" name="target_folder" value="{{ r.target_folder }}"></label>
+<div class="hint">Der Zielordner wird automatisch neu berechnet, wenn Bereich, Privatperson, Dokumenttyp, Datum oder Korrespondent geaendert werden. Du kannst ihn danach trotzdem manuell ueberschreiben.</div>
+<div class="pathbox"><b>Vollstaendiger Speicherort:</b><br><span id="full_path"></span></div><br>
+<button type="submit">Bestaetigen & speichern</button>
+</form>
+</div></div>
+<script>
+const archiveRoot={{ archive_root|tojson }};const docType=document.getElementById('document_type');const correspondent=document.getElementById('correspondent');const addresseeType=document.getElementById('addressee_type');const addresseeName=document.getElementById('addressee_name');const privatePerson=document.getElementById('private_person');const privateWrap=document.getElementById('private_person_wrap');const documentDate=document.getElementById('document_date');const targetFolder=document.getElementById('target_folder');const fullPath=document.getElementById('full_path');
+function safeComponent(value,fallback='Unklar'){return(value||fallback).replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/Ä/g,'Ae').replace(/Ö/g,'Oe').replace(/Ü/g,'Ue').replace(/ß/g,'ss').replace(/[^A-Za-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'')||fallback}
+function entityRoot(){const type=addresseeType.value;if(type==='PSS')return'PSS';if(type==='BP')return'Berliner-Paletten';if(type==='PSSpandau')return'Paletten-Service-Spandau';if(type==='Privat')return`Privat/${safeComponent(privatePerson.value)}`;return'Unklar'}
+function buildTarget(){const dt=docType.value.trim();const date=documentDate.value.trim();const year=/^\d{4}/.test(date)?date.slice(0,4):'Unbekannt';const month=/^\d{4}-\d{2}/.test(date)?date.slice(5,7):'00';const corr=safeComponent(correspondent.value.trim());const entity=entityRoot();const mapping={'Eingangsrechnung':`${entity}/Buchhaltung/Eingangsrechnungen/${year}/${corr}`,'Ausgangsrechnung':`${entity}/Buchhaltung/Ausgangsrechnungen/${year}/${corr}`,'Eingehende Gutschrift':`${entity}/Buchhaltung/Eingangsrechnungen/${year}/${corr}`,'Ausgehende Gutschrift':`${entity}/Buchhaltung/Ausgangsrechnungen/${year}/${corr}`,'Kassenbeleg':`${entity}/Buchhaltung/Kassenbelege/${year}/${month}`,'Bankbeleg':`${entity}/Buchhaltung/Bankbelege/${year}/${month}`,'Kontoauszug':`${entity}/Buchhaltung/Kontoauszuege/${year}/${corr}`,'Steuerbescheid':`${entity}/Buchhaltung/Steuerbescheide/${year}/${corr}`,'Mahnung':`${entity}/Buchhaltung/Mahnungen/${year}/${corr}`,'Zahlungsavis':`${entity}/Buchhaltung/Zahlungen/${year}/${corr}`,'Zahlungsnachweis':`${entity}/Buchhaltung/Zahlungen/${year}/${corr}`,'Lieferschein':`${entity}/Lieferscheine/${year}/${corr}`,'Vertrag':`${entity}/Vertraege/${year}/${corr}`};return mapping[dt]||`${entity}/Sonstiges/${year}`}
+function updatePrivateVisibility(){privateWrap.classList.toggle('hidden',addresseeType.value!=='Privat')}
+function syncAddresseeName(){const type=addresseeType.value;if(type==='PSS')addresseeName.value='Paletten-Service-Schlemeier';else if(type==='BP')addresseeName.value='Berliner Paletten';else if(type==='PSSpandau')addresseeName.value='Paletten-Service-Spandau';else if(type==='Privat')addresseeName.value=privatePerson.value==='Unklar'?'':privatePerson.value}
+function updateFullPath(){const rel=targetFolder.value.replaceAll('/','\\');fullPath.textContent=archiveRoot.replace(/[\\\/]$/,'')+'\\'+rel}
+function autoUpdate(){updatePrivateVisibility();syncAddresseeName();targetFolder.value=buildTarget();updateFullPath()}
+[docType,correspondent,addresseeType,privatePerson,documentDate].forEach(el=>el.addEventListener('input',autoUpdate));targetFolder.addEventListener('input',updateFullPath);updatePrivateVisibility();updateFullPath();
+</script></body></html>
