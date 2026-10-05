@@ -96,6 +96,8 @@ def home(request: Request):
     return templates.TemplateResponse("upload.html", {"request": request, "storage_root": str(FINORA_ROOT)})
 
 
+
+
 @app.get("/bank", response_class=HTMLResponse)
 def bank_page(request: Request):
     raw_search_tx = request.query_params.get("search_tx", "")
@@ -176,7 +178,7 @@ async def upload(request: Request, files: list[UploadFile] = File(...)):
             items.append(_prepare_upload(file))
         except ValueError as exc:
             errors.append(str(exc))
-        except Exception as exc:
+        except Exception as exc:  # Keep the batch usable if one OCR/import fails.
             errors.append(f"{file.filename or 'Datei'} konnte nicht verarbeitet werden: {exc}")
 
     if not items:

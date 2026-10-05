@@ -194,6 +194,7 @@ def record_learning(
     for field in ("document_type", "correspondent", "addressee_type", "private_person"):
         confirmed_value = (confirmed.get(field, "") or "").strip()
         predicted_value = (predicted.get(field, "") or "").strip()
+        # Explicit corrections teach more strongly than unchanged confirmations.
         weights[field] = 1.35 if confirmed_value and predicted_value and confirmed_value != predicted_value else 1.0
 
     cur.execute(

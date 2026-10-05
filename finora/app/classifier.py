@@ -58,6 +58,7 @@ def detect_addressee(text: str) -> tuple[str, str, str, float]:
 
     for key, aliases in ADDRESSEE_RULES.items():
         score, _ = _score_hits(n, aliases)
+        # Avoid weak acronym-only classification.
         if key == "PSS" and score == 1 and re.search(r"\bpss\b", n) and "schlemeier" not in n:
             score = 0
         confidence = min(0.98, 0.55 + score * 0.15) if score else 0.0
@@ -69,6 +70,7 @@ def detect_addressee(text: str) -> tuple[str, str, str, float]:
             }[key]
             best_type, best_name, best_private, best_conf = key, full, "", confidence
 
+    # Private-person detection is deliberately weaker than exact company matches.
     if best_conf == 0.0:
         for person, aliases in PRIVATE_PEOPLE.items():
             if any(re.search(rf"\b{re.escape(alias)}\b", n) for alias in aliases):
@@ -100,17 +102,30 @@ def detect_date(text: str) -> str:
 
 
 def _normalize_german_amount(raw: str) -> str:
+    """Normalize OCR amount text to German display format, e.g. 1.399,44.
+
+    Supports common OCR variants such as 1.399,44, 1 399,44, 1399,44 and
+    1,399.44. The returned string always uses a comma as decimal separator
+    and a dot as thousands separator.
+    """
     value = re.sub(r"\s+", "", raw.strip())
     if not value:
         return ""
+
+    # Determine the decimal separator from the final two digits.
     m = re.search(r"([.,])(\d{2})$", value)
     if not m:
         return ""
+    dec_sep = m.group(1)
     cents = m.group(2)
     integer = value[: m.start(1)]
+
+    # Remove all thousands separators from the integer part.
     integer_digits = re.sub(r"[^0-9]", "", integer)
     if not integer_digits:
         return ""
+
+    # Re-add German thousands separators for display consistency.
     groups = []
     while integer_digits:
         groups.append(integer_digits[-3:])
@@ -120,6 +135,13 @@ def _normalize_german_amount(raw: str) -> str:
 
 
 def detect_amount(text: str) -> str:
+    """Detect the most likely gross/total amount from OCR text.
+
+    Prefer amounts occurring close to strong total labels (Gesamtbetrag,
+    Brutto, Endbetrag, Summe). Fall back to the last monetary amount.
+    Thousands separators are preserved and normalized.
+    """
+    # German and international OCR variants: 1.399,44 / 1 399,44 / 1399,44 / 1,399.44
     amount_pattern = r"(?<!\d)(?:\d{1,3}(?:[.\s]\d{3})+|\d{1,7}|\d{1,3}(?:,\d{3})+)[,.]\d{2}(?!\d)"
 
     label_patterns = [
@@ -132,15 +154,20 @@ def detect_amount(text: str) -> str:
         r"summe",
     ]
 
+    # Search line-by-line first because invoices usually place the label and value together.
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     for label in label_patterns:
         rx_label = re.compile(label, re.I)
         for i, line in enumerate(lines):
             if not rx_label.search(line):
                 continue
+
+            # First prefer an amount on the same line as the total label.
             same_line = re.findall(amount_pattern, line)
             if same_line:
                 return _normalize_german_amount(same_line[-1])
+
+            # Some OCR layouts put the amount on the immediately following line.
             if i + 1 < len(lines):
                 next_line = re.findall(amount_pattern, lines[i + 1])
                 if next_line:
@@ -224,6 +251,7 @@ def classify(text: str, original_name: str) -> Classification:
     learning_note = ""
 
     learned = predict_from_history(text)
+    # Historical suggestions only replace the base rule when they are stronger.
     if learned.document_type and learned.confidence_document_type > doc_conf:
         doc_type = learned.document_type
         doc_conf = learned.confidence_document_type

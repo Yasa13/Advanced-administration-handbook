@@ -348,6 +348,8 @@ def _parse_mt940_86(value: str) -> tuple[str, str, str, str]:
     if re.fullmatch(r"[A-Z]{2}\d{2}[A-Z0-9]{10,30}", field31):
         participant_iban = field31
     else:
+        # Search individual structured fields without concatenating field boundaries;
+        # otherwise a following purpose/name can be mistaken for part of the IBAN.
         for candidate in (purpose, value):
             iban_match = re.search(r"(?<![A-Z0-9])([A-Z]{2}\d{2}[A-Z0-9]{10,30})(?![A-Z0-9])", candidate.upper())
             if iban_match:

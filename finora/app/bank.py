@@ -60,6 +60,8 @@ def score_candidate(tx: dict, candidate: dict, amount_override: object | None = 
                 score += 0.25
                 reasons.append("mögliche Teilzahlung")
         elif amount > open_amount:
+            # Useful for collective payments: the transaction can cover this invoice
+            # and still have money left for another one.
             score += 0.18
             reasons.append("Sammelzahlung kann Rechnung abdecken")
         elif diff <= Decimal("2.00"):
