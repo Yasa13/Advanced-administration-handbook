@@ -1,0 +1,41 @@
+{
+  "entities": [
+    {
+      "id": "PSS",
+      "label": "Paletten-Service Schlemeier",
+      "aliases": [
+        "Paletten-Service-Schlemeier",
+        "Paletten Service Schlemeier",
+        "PSS"
+      ]
+    },
+    {
+      "id": "PSSpandau",
+      "label": "Paletten-Service Spandau",
+      "aliases": [
+        "Paletten-Service-Spandau",
+        "Paletten Service Spandau",
+        "PSSpandau"
+      ]
+    },
+    {
+      "id": "BP",
+      "label": "Berliner Paletten",
+      "aliases": [
+        "Berliner Paletten",
+        "BP"
+      ]
+    },
+    {
+      "id": "Privat",
+      "label": "Privat",
+      "people": [
+        "Yasmin",
+        "Frank",
+        "Marina",
+        "Karl"
+      ]
+    }
+  ],
+  "fallback": "Unklar"
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FinoraBankTransaction",
+  "type": "object",
+  "required": [
+    "booking_date",
+    "amount",
+    "currency",
+    "row_hash"
+  ],
+  "properties": {
+    "booking_date": {
+      "type": "string"
+    },
+    "value_date": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "participant_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "participant_iban": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "booking_text": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "purpose": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string"
+    },
+    "balance": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "source_format": {
+      "enum": [
+        "CSV",
+        "CAMT",
+        "MT940"
+      ]
+    },
+    "row_hash": {
+      "type": "string"
+    },
+    "reconciliation_status": {
+      "enum": [
+        "Offen",
+        "Teilzugeordnet",
+        "Zugeordnet"
+      ]
+    }
+  }
+}

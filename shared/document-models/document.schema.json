@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SchlemeierDmsDocument",
+  "type": "object",
+  "required": [
+    "id",
+    "original_filename",
+    "status",
+    "entity"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "original_filename": {
+      "type": "string"
+    },
+    "stored_filename": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "title": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "document_type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "entity": {
+      "enum": [
+        "PSS",
+        "BP",
+        "PSSpandau",
+        "Privat",
+        "Unklar"
+      ]
+    },
+    "private_person": {
+      "enum": [
+        "Yasmin",
+        "Frank",
+        "Marina",
+        "Karl",
+        "Unklar",
+        ""
+      ]
+    },
+    "document_date": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "invoice_number": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "gross_amount": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "status": {
+      "enum": [
+        "Neu",
+        "Pruefen",
+        "Zugeordnet",
+        "Abgelegt",
+        "Duplikat"
+      ]
+    },
+    "source": {
+      "enum": [
+        "Upload",
+        "Scanner",
+        "SharePoint",
+        "OneDrive",
+        "Email",
+        "Finora",
+        "Unbekannt"
+      ]
+    },
+    "target_path": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "duplicate_of": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "thumbnail_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ocr_text": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "confidence": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    }
+  }
+}
