@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Schlemeier DMS</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <div class="eyebrow">PSS · Dokumentenmanagement</div>
+    <h1>Schlemeier DMS</h1>
+  </div>
+  <nav>
+    <a class="active" href="/">Dokumente</a>
+    <a href="/kontoabgleich">Kontoabgleich</a>
+    <span class="disabled">Buchhaltung</span>
+    <span class="disabled">Finanz-Dashboard</span>
+  </nav>
+</header>
+
+<main>
+  <section class="toolbar panel">
+    <input id="search" type="search" placeholder="Dateiname, Rechnungsnummer, Korrespondent …">
+    <select id="statusFilter">
+      <option value="">Alle Status</option>
+      <option value="Pruefen">Prüfen</option>
+      <option value="Abgelegt">Abgelegt</option>
+    </select>
+    <select id="entityFilter">
+      <option value="">Alle Bereiche</option>
+      <option value="PSS">PSS</option>
+      <option value="BP">Berliner Paletten</option>
+      <option value="PSSpandau">Paletten-Service Spandau</option>
+      <option value="Privat">Privat</option>
+      <option value="Unklar">Unklar</option>
+    </select>
+    <button id="refreshBtn" class="secondary">Aktualisieren</button>
+    <div id="stats" class="stats"></div>
+  </section>
+
+  <section class="workspace">
+    <aside class="list panel">
+      <div class="section-title"><span>Belege</span><span id="count"></span></div>
+      <div id="documentList" class="cards"></div>
+    </aside>
+
+    <section class="detail panel">
+      <div id="emptyState" class="empty">Wähle links einen Beleg aus.</div>
+      <div id="detailContent" class="hidden">
+        <div class="detail-head">
+          <div>
+            <span id="statusBadge" class="badge"></span>
+            <h2 id="detailTitle"></h2>
+            <div id="detailFilename" class="muted"></div>
+          </div>
+          <div id="confidence" class="confidence"></div>
+        </div>
+
+        <div class="preview-wrap">
+          <div id="preview"></div>
+        </div>
+
+        <div id="suggestionBox" class="suggestion hidden"></div>
+
+        <form id="decisionForm" class="form-grid hidden">
+          <label>Dokumenttyp
+            <select id="documentType" required>
+              <option>Eingangsrechnung</option>
+              <option>Ausgangsrechnung</option>
+              <option>Eingehende Gutschrift</option>
+              <option>Ausgehende Gutschrift</option>
+              <option>Kassenbeleg</option>
+              <option>Bankbeleg</option>
+              <option>Kontoauszug</option>
+              <option>Steuerbescheid</option>
+              <option>Mahnung</option>
+              <option>Zahlungsavis</option>
+              <option>Zahlungsnachweis</option>
+              <option>Lieferschein</option>
+              <option>Vertrag</option>
+              <option>Sonstiges</option>
+            </select>
+          </label>
+          <label>Wo gehört der Beleg hin?
+            <select id="entity" required>
+              <option value="PSS">PSS</option>
+              <option value="BP">Berliner Paletten</option>
+              <option value="PSSpandau">Paletten-Service Spandau</option>
+              <option value="Privat">Privat</option>
+              <option value="Unklar">Prüfen / Unklar</option>
+            </select>
+          </label>
+          <label id="privateWrap" class="hidden">Privatperson
+            <select id="privatePerson">
+              <option value="Yasmin">Yasmin</option>
+              <option value="Frank">Frank</option>
+              <option value="Marina">Marina</option>
+              <option value="Karl">Karl</option>
+              <option value="Unklar">Unklar</option>
+            </select>
+          </label>
+          <label>Korrespondent
+            <input id="correspondent">
+          </label>
+          <label>Datum
+            <input id="documentDate" placeholder="JJJJ-MM-TT">
+          </label>
+          <label>Rechnungsnummer
+            <input id="invoiceNumber">
+          </label>
+          <label>Bruttobetrag
+            <input id="grossAmount">
+          </label>
+          <label class="wide">Titel
+            <input id="title">
+          </label>
+          <div class="wide target-box">
+            <div class="muted">Vorgeschlagener Zielpfad</div>
+            <strong id="targetPath">–</strong>
+          </div>
+          <div class="wide actions">
+            <button type="submit">Bestätigen & ablegen</button>
+          </div>
+        </form>
+
+        <div id="archivedInfo" class="archived hidden"></div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/assets/app.js"></script>
+</body>
+</html>
