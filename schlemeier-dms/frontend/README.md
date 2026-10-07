@@ -1,33 +1,18 @@
 # Frontend
 
-Dieser Ordner ist für die bestehende Schlemeier-DMS-Seite vorgesehen.
+Die erste integrierte DMS-Oberfläche besteht aus:
 
-## Kernansichten
+- `index.html`
+- `styles.css`
+- `app.js`
 
-### Dokumente
-- Tabellen- oder Kartenansicht
-- Miniaturansicht
-- Dateiname
-- Dokumenttyp
-- Firma/Privatperson
-- Datum
-- Betrag
+Sie liest die Dokumentliste aus dem lokalen DMS-Backend und zeigt:
+
+- Miniatur-/Dokumentvorschau
 - Status
+- Finora-Klassifikationsvorschlag
+- Bereich und Dokumenttyp
+- Rechnungsdaten
+- Zielauswahl und bestätigte Ablage
 
-### Prüfen
-- Dokumentvorschau
-- OCR-Text
-- Klassifikationsvorschlag von Finora
-- Auswahl "Wo gehört der Beleg hin?"
-- Bestätigen / Korrigieren
-
-### Kontoabgleich
-- Bankbuchungen
-- Rechnungsvorschläge
-- Teilzahlungen
-- Sammelzahlungen
-- manuelle Zuordnung
-- Zuordnung lösen
-
-### Finanz-Dashboard
-Geplant ab v0.7.
+Der Kontoabgleich bleibt vorerst Finoras bestehende Ansicht und wird über die Navigation geöffnet.

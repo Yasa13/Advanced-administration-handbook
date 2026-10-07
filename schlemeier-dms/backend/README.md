@@ -1,18 +1,17 @@
 # Backend
 
-Backend-Grenze zwischen Schlemeier DMS und Finora.
+FastAPI-Integrationsschicht zwischen Schlemeier DMS und Finora.
 
-## Verantwortlichkeiten
+## Endpunkte
 
-- Dokumentliste bereitstellen
-- Dokumentdetails und Thumbnail-Referenzen liefern
-- Klassifikationsvorschläge von Finora übernehmen
-- Benutzerkorrekturen an Finora zurückgeben
-- Ablageziel verwalten
-- Dublettenstatus führen
-- Banktransaktionen und Matching-Status bereitstellen
+- `GET /` – DMS-Oberfläche
+- `GET /api/health` – Status
+- `GET /api/documents` – offene und abgelegte Dokumente
+- `GET /api/documents/{id}` – Dokumentmetadaten
+- `GET /api/documents/{id}/file` – sichere Dokumentvorschau
+- `POST /api/documents/{id}/decision` – offenen Beleg bestätigen und ablegen
+- `GET /kontoabgleich` – Weiterleitung zum Finora-Kontoabgleich
 
 ## Grundsatz
 
-Die UI soll keine eigene OCR-, Matching- oder Klassifikationslogik duplizieren.
-Diese Logik bleibt in Finora und wird über gemeinsame Verträge aus shared/ angesprochen.
+Die DMS-Schicht dupliziert weder OCR noch Klassifikations- oder Matchinglogik. Sie verwendet direkt Finoras bestehende Funktionen und Datenbank. Benutzerkorrekturen werden als Lernbeispiele zurückgegeben.
